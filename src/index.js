@@ -1,6 +1,8 @@
 import express from "express"
 import bodyParser from "body-parser"
 
+import hbs from "nodemailer-express-handlebars";
+
 const PORT = 3030
 
 const app = express()
@@ -8,22 +10,18 @@ const app = express()
 app.use(bodyParser.json())
 app.use(bodyParser.urlencoded({extended: false}))
 
-import authController from "./controllers/authController.js";
+app.engine(
+    'hbs',
+    hbs({
+       extname: "hbs",
+       defaultLayout: "",
+       layoutsDir: "",
+    })
+ );
 
-authController(app)
+import controllers from "./app/controllers/index.js"
+controllers(app)
 
 app.listen(PORT)
 
-// import router from "./controllers/authController"
-// app.use("/auth", router)
-
 export default app
-
-// app.get("/",(req, res) => {
-//     res.send("OK")
-// })
-
-// app.listen(PORT, _ => {
-//     console.clear()
-//     console.log(`////////////////////////\n\nRodando... ${PORT}\n\n////////////////////////`)
-// })
