@@ -8,7 +8,7 @@ const PORT = 3030
 const app = express()
 
 app.use(bodyParser.json())
-app.use(bodyParser.urlencoded({extended: false}))
+app.use(bodyParser.urlencoded({extended: true}))
 
 app.engine(
     'hbs',
@@ -19,8 +19,14 @@ app.engine(
     })
  );
 
-import controllers from "./app/controllers/index.js"
-controllers(app)
+// import controllers from "./app/controllers/index.js"
+// controllers(app)
+
+import authController from "./app/controllers/authController.js"
+import projectController from "./app/controllers/projectController.js"
+
+authController(app)
+projectController(app)
 
 app.listen(PORT)
 
