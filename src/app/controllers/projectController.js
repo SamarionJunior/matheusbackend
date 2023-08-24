@@ -14,7 +14,7 @@ router.use(authMiddlewares);
 
 router.get("/", async (req, res) => {
     try{
-        const projects = await Project.find().populate("user");
+        const projects = await Project.find().populate(["user", "tasks"]);
         
         console.log("oi");
         return res.send({projects});
@@ -27,7 +27,7 @@ router.get("/", async (req, res) => {
 
 router.get("/:projectId", async (req, res) => {
     try{
-        const projects = await Project.findById(req.params.projectId).populate("user");
+        const projects = await Project.findById(req.params.projectId).populate(["user", "tasks"]);
         
         console.log("oi");
         return res.send({projects});
@@ -45,17 +45,20 @@ router.post("/", async (req, res) => {
             await Project.create(
                 { title, description, user: req.userId}
             );
+        
+        if(tasks){
+            await Promise.all(tasks.map(async task => {
+                const projectTask = new Task({ ...task, project: project._id, assignedTo: req.userId})
+    
+                await projectTask.save();
+                project.tasks.push(projectTask)
+            }))
 
-        tasks.map(task => {
-            const projectTask = new Task({ ...task, project: project._id})
-
-            projectTask.save().then(pTask => project.tasks.push(pTask))
-        })
-
-        await project.save();
+            await project.save();
+        }
         
         console.log("oi");
-        return res.send({project, user: req.userId});
+        return res.send({project});
     }catch(error){
         console.log(error);
         console.log("oi");
@@ -64,8 +67,40 @@ router.post("/", async (req, res) => {
 })
 
 router.put("/:projectId", async (req, res) => {
-    console.log("oi")
-    return res.send({user: req.userId})
+    const {title, description, tasks} = req.body;
+    try{
+        const project = 
+            await Project.findByIdAndUpdate(
+                req.params.projectId,
+                { 
+                    title, 
+                    description
+                },
+                {new: true}
+            );
+
+        project.tasks = []
+
+        await Task.deleteMany({project: project._id})
+        
+        if(tasks){
+            await Promise.all(tasks.map(async task => {
+                const projectTask = new Task({ ...task, project: project._id, assignedTo: req.userId})
+    
+                await projectTask.save();
+                project.tasks.push(projectTask)
+            }))
+
+            await project.save();
+        }
+        
+        console.log("oi");
+        return res.send({project});
+    }catch(error){
+        console.log(error);
+        console.log("oi");
+        return res.status(400).send({erro: "Error updating project"})
+    }
 })
 
 router.delete("/:projectId", async (req, res) => {
